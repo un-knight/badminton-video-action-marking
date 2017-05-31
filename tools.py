@@ -29,3 +29,10 @@ class VideoProperty():
         self.frame_height = 0
         self.frame_count = 0
         self.current_frame = 0
+
+    def initialize(self):
+        self.fps = 0
+        self.frame_width = 0
+        self.frame_height = 0
+        self.frame_count = 0
+        self.current_frame = 0
