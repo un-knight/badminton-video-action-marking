@@ -37,3 +37,25 @@ class VideoThread(QThread):
 
     def set_sleep_time(self, sleep_time):
         self.sleep_time = sleep_time
+
+
+class FileSaver(QThread):
+    trigger = pyqtSignal()
+
+    def __init__(self):
+        super(FileSaver, self).__init__()
+        self.mutex = QMutex()
+        self.stoped = False
+
+    def run(self):
+        with QMutexLocker(self.mutex):
+            self.stoped = False
+        self.trigger.emit()
+
+    def stop(self):
+        with QMutexLocker(self.mutex):
+            self.stoped = True
+
+    def isStoped(self):
+        with QMutexLocker(self.mutex):
+            return self.stoped
