@@ -188,8 +188,8 @@ $ python main.py
 
 ## 关于作者
 
-姓名：叶俊贤
-E-mail：yjx.underworld@gmail.com
-github：https://github.com/un-knight
-个人博客（简书）：http://www.jianshu.com/u/61a39218bfad
-雷锋网专栏：https://www.leiphone.com/author/gebiwangda9402
+姓名：叶俊贤  
+E-mail：yjx.underworld@gmail.com  
+github：https://github.com/un-knight  
+个人博客（简书）：http://www.jianshu.com/u/61a39218bfad  
+雷锋网专栏：https://www.leiphone.com/author/gebiwangda9402  
