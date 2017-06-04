@@ -42,6 +42,7 @@ def save_file(result, video_filename):
             category = result.get(frame_window)
             f.write("{start_frame},{over_frame}:{category} ".format(**locals()))
         f.write('\n')
+    return output_filename
 
 
 class VideoProperty():

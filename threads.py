@@ -47,12 +47,12 @@ class CoverThread(QThread):
 
     def run(self):
         with QMutexLocker(self.mutex):
-            self.mutex = False
+            self.stoped = False
         self.trigger.emit()
 
     def stop(self):
         with QMutexLocker(self.mutex):
-            self.mutex = True
+            self.stoped = True
 
     def isStoped(self):
         with QMutexLocker(self.mutex):

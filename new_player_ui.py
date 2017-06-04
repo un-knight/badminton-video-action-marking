@@ -67,7 +67,23 @@ class Ui_MainWindow(object):
 
         # @Junxian Ye
         # op: add feature
-        self.horizontalSlider.setRange(0, 216000)
+        self.horizontalSlider.setRange(0, 300000)
+        self.horizontalSlider.setEnabled(False)
+
+        # @Junxian Ye
+        # op: add QLabel to show video frame information
+        self.label_information = QtWidgets.QLabel(self.centralwidget)
+        self.label_information.setGeometry(QtCore.QRect(60, 530, 201, 41))
+        self.label_information.setText("")
+        self.label_information.setObjectName("label_information")
+
+
+        # @Junxian Ye
+        # op: add shortcut
+        self.shortcut_back = QtWidgets.QShortcut(QtGui.QKeySequence("Ctrl+A"), self)
+        self.shortcut_forward = QtWidgets.QShortcut(QtGui.QKeySequence("Ctrl+D"), self)
+        self.shortcut_start = QtWidgets.QShortcut(QtGui.QKeySequence("Ctrl+S"), self)
+        self.shortcut_mark = QtWidgets.QShortcut(QtGui.QKeySequence("Ctrl+Z"), self)
 
         self.play_window = QtWidgets.QLabel(self.centralwidget)
         self.play_window.setGeometry(QtCore.QRect(10, 10, 900, 400))

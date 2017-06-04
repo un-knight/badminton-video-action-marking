@@ -4,7 +4,7 @@ time:
 link:
 """
 from new_player_ui import Ui_MainWindow
-from threads import VideoThread, FileSaver
+from threads import VideoThread, FileSaver, CoverThread
 from tools import VideoProperty, numpy_to_pixmap, save_file
 from PyQt5.QtWidgets import *
 from PyQt5.QtGui import *
@@ -40,10 +40,12 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.video_property = VideoProperty()
         self.video_thread = VideoThread()
         self.file_saver = FileSaver()
+        self.cover_thread = CoverThread()
 
         # setup single slot
         self.video_thread.trigger.connect(self._play_video)
         self.file_saver.trigger.connect(self._save_file)
+        self.cover_thread.trigger.connect(self._play_video)
 
         self.pushButton_load.clicked.connect(self._load_file)
         self.pushButton_play.clicked.connect(self._play_or_pause_video)
@@ -65,6 +67,11 @@ class MainWindow(QMainWindow, Ui_MainWindow):
 
         self.actionAbout.triggered.connect(self._help)
 
+        self.shortcut_back.activated.connect(self._turn_back)
+        self.shortcut_forward.activated.connect(self._turn_forward)
+        self.shortcut_start.activated.connect(self._play_or_pause_video)
+        self.shortcut_mark.activated.connect(self._mark_action)
+
     def reset_properties(self):
         self.result = {}
         self.tmp = []
@@ -82,6 +89,8 @@ class MainWindow(QMainWindow, Ui_MainWindow):
                 self.cap.release()
             self.cap.open(file_name)
 
+            self.statusbar.showMessage("open file {}".format(self.file_name))
+
             # get video properties
             self.video_property.fps = self.cap.get(cv2.CAP_PROP_FPS)
             self.video_property.frame_count = self.cap.get(cv2.CAP_PROP_FRAME_COUNT)
@@ -98,18 +107,28 @@ class MainWindow(QMainWindow, Ui_MainWindow):
             self.status = STATUS['load_video']
 
             # using 1st frame as the video cover
-            self._play_video()
+            # self._play_video()
+            self.cover_thread.start()
+            # self.cover_thread.stop()
+
             self.status = STATUS['pause_video']
 
             self.pushButton_play.setEnabled(True)
+            self.horizontalSlider.setEnabled(True)
 
     def _start_saver(self):
         self.file_saver.start()
-        self.file_saver.stop()
+        # self.file_saver.stop()
 
     def _save_file(self):
-        save_file(self.result, self.file_name)
-        QMessageBox.information(self, "提示", "完成保存", QMessageBox.Yes)
+        if self.result:
+            path = save_file(self.result, self.file_name)
+            infor = "完成保存，保存路径是：\n{}".format(path)
+            QMessageBox.information(self, "提示", infor, QMessageBox.Yes)
+
+        else:
+            infor = "尚未标记任何信息！！！"
+            QMessageBox.warning(self, "警告", infor, QMessageBox.Yes)
 
     def _play_or_pause_video(self):
         if self.status == STATUS['pause_video']:
@@ -129,9 +148,14 @@ class MainWindow(QMainWindow, Ui_MainWindow):
             self.play_window.setPixmap(pixmap_frame)
 
             # update QSlider
-            current_frame = self.cap.get(cv2.CAP_PROP_POS_FRAMES)
+            current_frame = self.cap.get(cv2.CAP_PROP_POS_FRAMES) - 1
             slider_pos = int(current_frame / self.video_property.frame_count * \
                          self.horizontalSlider.maximum())
+
+            # update label_information
+            infor = "视频帧信息：\n{}/{}".format(int(current_frame), int(self.video_property.frame_count))
+            self.label_information.setText(infor)
+
             # print(slider_pos)
             self.horizontalSlider.setValue(slider_pos)
             # print("frame: {}".format(self.video_property.current_frame))
@@ -140,16 +164,16 @@ class MainWindow(QMainWindow, Ui_MainWindow):
             self.video_thread.stop()
             self.pushButton_play.setText(_translate("MainWindow", "播放"))
 
-    def _change_slider(self, value):
-        # print(value)
-        pass
-
     def _release_slider(self):
         slider_pos = self.horizontalSlider.value()
         next_frame = int(slider_pos / self.horizontalSlider.maximum() * \
                          self.video_property.frame_count)
+
+        if next_frame == self.video_property.frame_count:
+            next_frame -= 1
+
         self.cap.set(cv2.CAP_PROP_POS_FRAMES, next_frame)
-        self._play_video()
+        self.cover_thread.start()
 
     def _press_slider(self):
         self.video_thread.stop()
@@ -157,37 +181,71 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.pushButton_play.setText(_translate("MainWindow", "播放"))
 
     def _mark_action(self):
-        if self.mark_start_flag:
-            self.pushButton_mark.setText(_translate("MainWindow", "标记结束帧"))
-            self.mark_start_flag = False
+        if self.cap.isOpened():
+            if self.mark_start_flag:
+                self.pushButton_mark.setText(_translate("MainWindow", "标记结束帧"))
+                self.mark_start_flag = False
 
-            # record start frame position
-            self.tmp = []
-            current_frame = self.cap.get(cv2.CAP_PROP_POS_FRAMES) - 1
-            current_frame = max(current_frame, 0)
-            self.tmp.append(current_frame)
-            # print('start mark')
-        else:
-            if self.action_categories is None:
-                QMessageBox.information(self, "警告", "请选择一种动作标签", QMessageBox.Yes)
-                return
-            self.pushButton_mark.setText(_translate("MainWindow", "标记开始帧"))
-            self.mark_start_flag = True
-
-            # record end frame position
-            if self.horizontalSlider.value() == self.horizontalSlider.maximum():
-                current_frame = self.video_property.frame_count - 1
-            else:
+                # record start frame position
+                self.tmp = []
                 current_frame = self.cap.get(cv2.CAP_PROP_POS_FRAMES) - 1
-            current_frame = max(current_frame, 0)
-            self.tmp.append(current_frame)
-            self.result[tuple(self.tmp)] = self.action_categories
-            # self.action_categories = None
-            # print('end mark')
-            # print(self.result)
+                current_frame = max(current_frame, 0)
+                self.tmp.append(current_frame)
+                # print('start mark')
+            else:
+                if self.action_categories is None:
+                    QMessageBox.warning(self, "警告", "请选择一种动作标签", QMessageBox.Yes)
+                    return
+                self.pushButton_mark.setText(_translate("MainWindow", "标记开始帧"))
+                self.mark_start_flag = True
 
-            self.reset_radio_button()
-        # self.pushButton_mark.disconnect(self._mark_action_start)
+                # record end frame position
+                if self.horizontalSlider.value() == self.horizontalSlider.maximum():
+                    current_frame = self.video_property.frame_count - 1
+                else:
+                    current_frame = self.cap.get(cv2.CAP_PROP_POS_FRAMES) - 1
+                current_frame = max(current_frame, 0)
+                self.tmp.append(current_frame)
+                self.result[tuple(self.tmp)] = self.action_categories
+                # self.action_categories = None
+                # print('end mark')
+                # print(self.result)
+
+                self.reset_radio_button()
+        else:
+            QMessageBox.warning(self, "警告", "未打开视频", QMessageBox.Yes)
+
+    def _turn_back(self):
+        # stop video && change status
+        if self.cap.isOpened():
+            self.video_thread.stop()
+            self.pushButton_play.setText(_translate("MainWindow", "播放"))
+            self.status = STATUS['pause_video']
+
+            # step by 3 seconds
+            step = self.video_property.fps * 3
+            current_frame = self.cap.get(cv2.CAP_PROP_POS_FRAMES) - 1
+            next_frame = max(current_frame - step, 0)
+            self.cap.set(cv2.CAP_PROP_POS_FRAMES, next_frame)
+            self.cover_thread.start()
+        else:
+            QMessageBox.warning(self, "警告", "未打开视频", QMessageBox.Yes)
+
+    def _turn_forward(self):
+        if self.cap.isOpened():
+            self.video_thread.stop()
+            self.pushButton_play.setText(_translate("MainWindow", "播放"))
+            self.status = STATUS['pause_video']
+
+            # step by 3 seconds
+            step = self.video_property.fps * 3
+            current_frame = self.cap.get(cv2.CAP_PROP_POS_FRAMES) - 1
+            next_frame = min(current_frame + step, self.video_property.frame_count - 1)
+            self.cap.set(cv2.CAP_PROP_POS_FRAMES, next_frame)
+            self.cover_thread.start()
+        else:
+            QMessageBox.warning(self, "警告", "未打开视频", QMessageBox.Yes)
+
 
     def _action_CQ(self, value):
         if value:
