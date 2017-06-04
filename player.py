@@ -12,6 +12,8 @@ from PyQt5.QtCore import *
 import cv2
 
 
+__version__ = "0.2.0"
+
 STATUS = {
     'open_app': 0,
     'load_video': 1,
@@ -224,11 +226,11 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         作者：叶俊贤
         日期：2017.5.31
         邮箱：yjx.underworld@gmail.com
-        版本号：0.1.0
+        版本号：{}
         如果在使用过程遇到任何问题，或者想提
         修改建议，欢迎联系:)
         """
-        QMessageBox.information(self, "提示", infor, QMessageBox.Yes)
+        QMessageBox.information(self, "提示", infor.format(__version__), QMessageBox.Yes)
 
     def reset_radio_button(self):
         self.radioButton_Hidden.setChecked(True)
