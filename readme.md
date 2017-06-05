@@ -28,7 +28,8 @@
 
 这里提供了 Windows 10 系统下编译的可执行文件下载地址。
 
-[action_marking_v0.1.0](http://pan.baidu.com/s/1kVwqyP5)
+- [action_marking_v0.1.0(32bit)](http://pan.baidu.com/s/1kVwqyP5)
+- [action_marking_v0.2.0(32bit)](http://pan.baidu.com/s/1i4EvqLn)
 
 不需要任何环境配置和依赖安装，可直接运行，使用方法请参考《羽毛球视频动作片段标注软件使用说明》。
 
